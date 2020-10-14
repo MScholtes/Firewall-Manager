@@ -26,8 +26,8 @@ Export allowing rules
 Export blocking rules
 .NOTES
 Author: Markus Scholtes
-Version: 1.02
-Build date: 2020/02/15
+Version: 1.03
+Build date: 2020/10/12
 .EXAMPLE
 Export-FirewallRules
 Exports all firewall rules to the CSV file FirewallRules.csv in the current directory.
@@ -40,7 +40,7 @@ Exports all SNMP firewall rules to the JSON file SNMPRules.json.
 #>
 function Export-FirewallRules
 {
-	Param($Name = "*", $CSVFile = ".\FirewallRules.csv", [SWITCH]$JSON, [SWITCH]$Inbound, [SWITCH]$Outbound, [SWITCH]$Enabled, [SWITCH]$Disabled, [SWITCH]$Block, [SWITCH]$Allow)
+	Param($Name = "*", $CSVFile = "", [SWITCH]$JSON, [SWITCH]$Inbound, [SWITCH]$Outbound, [SWITCH]$Enabled, [SWITCH]$Disabled, [SWITCH]$Block, [SWITCH]$Allow)
 
 	#Requires -Version 4.0
 
@@ -145,10 +145,12 @@ function Export-FirewallRules
 
 	if (!$JSON)
 	{ # output rules in CSV format
+		if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.csv" }
 		$FirewallRuleSet | ConvertTo-CSV -NoTypeInformation -Delimiter ";" | Set-Content $CSVFile
 	}
 	else
 	{ # output rules in JSON format
+		if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.json" }
 		$FirewallRuleSet | ConvertTo-JSON | Set-Content $CSVFile
 	}
 }
