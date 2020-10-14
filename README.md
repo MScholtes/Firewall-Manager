@@ -70,7 +70,7 @@ There might be issues when importing rules for "metro apps" to another computer.
 
 App packet rules are stored as a SID and usually apply only to user accounts whose SIDs are stored in the export file. Those rules will normally not work on another computer since a SID is unique.
 ## Versions
-## 1.0.3, 2020-10-12
+### 1.0.3, 2020-10-12
 - default file name for JSON data has extension json now
 
 ### 1.0.2, 2020-02-17
