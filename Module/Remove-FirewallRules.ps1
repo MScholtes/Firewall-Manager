@@ -10,10 +10,14 @@ anderen
 Input file
 .PARAMETER JSON
 Input in JSON instead of CSV format
+.PARAMETER PolicyStore
+Store from which rules are removed (default: PersistentStore).
+Allowed values are PersistentStore, ActiveStore (the resultant rule set of all sources), localhost,
+a computer name, <domain.fqdn.com>\<GPO_Friendly_Name> and others depending on the environment.
 .NOTES
 Author: Markus Scholtes
-Version: 1.03
-Build date: 2020/10/12
+Version: 1.1.0
+Build date: 2020/12/12
 .EXAMPLE
 Remove-FirewallRules
 Removes all firewall rules according to a list in the CSV file FirewallRules.csv in the current directory.
@@ -23,7 +27,7 @@ Removes all firewall rules according to the list in the JSON file WmiRules.json.
 #>
 function Remove-FirewallRules
 {
-	Param($CSVFile = "", [SWITCH]$JSON)
+	Param($CSVFile = "", [SWITCH]$JSON, [STRING]$PolicyStore = "PersistentStore")
 
 	#Requires -Version 4.0
 
@@ -71,6 +75,6 @@ function Remove-FirewallRules
 		}
 
 		Write-Output "Removing firewall rule `"$($CurrentRule.DisplayName)`" ($($CurrentRule.Name))"
-		Get-NetFirewallRule -EA SilentlyContinue -Name $CurrentRule.Name | Remove-NetFirewallRule
+		Get-NetFirewallRule -EA SilentlyContinue -PolicyStore $PolicyStore -Name $CurrentRule.Name | Remove-NetFirewallRule
 	}
 }

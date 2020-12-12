@@ -2,8 +2,8 @@
 .SYNOPSIS
 Firewall-Manager is a module to manage firewall rules.
 .NOTES
-Version: 1.0.3
-Date: 2020-10-12
+Version: 1.1.0
+Date: 2020-12-12
 Author: Markus Scholtes
 #>
 
