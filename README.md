@@ -16,7 +16,7 @@ PS C:\> Install-Module Firewall-Manager
 ```
 (on Powershell V4 you may have to install PowershellGet before) or download from here: https://www.powershellgallery.com/packages/Firewall-Manager/.
 
-See the script version web page too: [Powershell scripts to export and import firewall rules](https://gallery.technet.microsoft.com/Powershell-to-export-and-23287694).
+See the script version web page too: [Powershell scripts to export and import firewall rules](https://github.com/MScholtes/TechNet-Gallery).
 
 ## Functions
 ### Export-FirewallRules
