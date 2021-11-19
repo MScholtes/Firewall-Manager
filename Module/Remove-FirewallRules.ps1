@@ -17,37 +17,81 @@ a computer name, <domain.fqdn.com>\<GPO_Friendly_Name> and others depending on t
 .NOTES
 Author: Markus Scholtes
 Version: 1.1.0
-Build date: 2020/12/12
+.CHANGE LOG
+    Build date: 2020/12/12 Markus Scholtes
+    Update 2021/11/19 ThisIsJeremiah@protonmail.com
+        -Rename path parameter for CSVFile to Path.
+        -Added logic to validate file path
+        -Added logic to determine file type
+
 .EXAMPLE
-Remove-FirewallRules
-Removes all firewall rules according to a list in the CSV file FirewallRules.csv in the current directory.
-.EXAMPLE
-Remove-FirewallRules WmiRules.json -json
-Removes all firewall rules according to the list in the JSON file WmiRules.json.
+Remove-FirewallRules -Path .\FWRules.json
+    Removes all firewall rules listed in the specified json file
+
 #>
 function Remove-FirewallRules
 {
-	Param($CSVFile = "", [SWITCH]$JSON, [STRING]$PolicyStore = "PersistentStore")
+Param(
+            [Parameter(Mandatory = $True)]
+            $Path,
+            [Parameter(Mandatory = $false)]
+            [STRING]$PolicyStore = "PersistentStore")
 
 	#Requires -Version 4.0
+  #Validate path & determine filetype
+    Write-Output "Validating path: $path"
+    IF(Test-Path -Path $Path) #throw error if path does not exit
+        {
+        #parse path to confirm json or csv
+        
+        if ($Path |Select-String -Pattern ".csv") #Test for CSV
+            {
+            $PathOk = $true
+            $FileType = "CSV"
+            Write-Output "Data is CSV"
+            }
+        ELSE
+            {
+            IF($Path |Select-String -Pattern ".json") # Test for json
+                {
+                $PathOk = $true
+                $FileType = "JSON"
+                Write-Output "Data is JSON"
+                }
+                ELSE
+                    {
+                    throw "Invalid Input file type."
+                    }
+            
+            }
+        }
+    ELSE
+        {
+        throw "Invalid FilePath"
+        }
 
+        #Read File
+         Write-Output "Loading Firewall rules to memory"
+    SWITCH($FileType)
+        {
+        "CSV" # read CSV file
+            {
+		    #if ([STRING]::IsNullOrEmpty($path)) { $CSVFile = ".\FirewallRules.csv" }
+		    $FirewallRules = Get-Content $path | ConvertFrom-CSV -Delimiter ";"
+            }
+        "JSON" # Read JSON file
+            {
+            #if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.json" }
+	    	$FirewallRules = Get-Content $path | ConvertFrom-JSON
+            }
+        }
 
-	if (!$JSON)
-	{ # read CSV file
-		if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.csv" }
-		$FirewallRules = Get-Content $CSVFile | ConvertFrom-CSV -Delimiter ";"
-	}
-	else
-	{ # read JSON file
-		if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.json" }
-		$FirewallRules = Get-Content $CSVFile | ConvertFrom-JSON
-	}
 
 	# iterate rules
 	ForEach ($Rule In $FirewallRules)
 	{
 		$CurrentRule = $NULL
-		if (![STRING]::IsNullOrEmpty($Rule.Name))
+		if (![STRING]::IsNullOrEmpty($Rule.Name)) #Set Current Rule based on Rule Name
 		{
 			$CurrentRule = Get-NetFirewallRule -EA SilentlyContinue -Name $Rule.Name
 			if (!$CurrentRule)
@@ -58,7 +102,7 @@ function Remove-FirewallRules
 		}
 		else
 		{
-			if (![STRING]::IsNullOrEmpty($Rule.DisplayName))
+			if (![STRING]::IsNullOrEmpty($Rule.DisplayName)) #Set Current Rule if name is null, set name based off of displayname
 			{
 				$CurrentRule = Get-NetFirewallRule -EA SilentlyContinue -DisplayName $Rule.DisplayName
 				if (!$CurrentRule)
@@ -77,4 +121,5 @@ function Remove-FirewallRules
 		Write-Output "Removing firewall rule `"$($CurrentRule.DisplayName)`" ($($CurrentRule.Name))"
 		Get-NetFirewallRule -EA SilentlyContinue -PolicyStore $PolicyStore -Name $CurrentRule.Name | Remove-NetFirewallRule
 	}
+
 }

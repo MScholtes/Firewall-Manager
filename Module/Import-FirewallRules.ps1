@@ -14,20 +14,62 @@ Allowed values are PersistentStore, ActiveStore (the resultant rule set of all s
 a computer name, <domain.fqdn.com>\<GPO_Friendly_Name> and others depending on the environment.
 .NOTES
 Author: Markus Scholtes
+.CHANGE LOGE
+    Build date: 2020/12/12 Markus Scholtes
+    Update 2021/11/19 ThisIsJeremiah@protonmail.com
+        -Rename path parameter for CSVFile to Path.
+        -Added logic to validate file path
+        -Added logic to determine file type
+
+
 Version: 1.1.0
 Build date: 2020/12/12
+
 .EXAMPLE
-Import-FirewallRules
-Imports all firewall rules in the CSV file FirewallRules.csv in the current directory.
-.EXAMPLE
-Import-FirewallRules WmiRules.json -json
-Imports all firewall rules in the JSON file WmiRules.json.
+    Import-FirewallRules -Path .\WmiRules.json
+    Imports all firewall rules in the JSON file WmiRules.json.
 #>
 function Import-FirewallRules
 {
-	Param($CSVFile = "", [SWITCH]$JSON, [STRING]$PolicyStore = "PersistentStore")
+	Param(
+    [Parameter(Mandatory = $True)]
+    $Path = "",
+    [STRING]$PolicyStore = "PersistentStore"
+    )
 
 	#Requires -Version 4.0
+    
+    #Validate path & determine filetype
+    Write-Output "Validating path: $path"
+    IF(Test-Path -Path $Path) #throw error if path does not exit
+        {
+        #parse path to confirm json or csv
+        
+        if ($Path |Select-String -Pattern ".csv") #Test for CSV
+            {
+            $PathOk = $true
+            $FileType = "CSV"
+            Write-Output "Data is CSV"
+            }
+        ELSE
+            {
+            IF($Path |Select-String -Pattern ".json") # Test for json
+                {
+                $PathOk = $true
+                $FileType = "JSON"
+                Write-Output "Data is JSON"
+                }
+                ELSE
+                    {
+                    throw "Invalid Input file type."
+                    }
+            
+            }
+        }
+    ELSE
+        {
+        throw "Invalid FilePath"
+        }
 
 	# convert comma separated list (String) to Stringarray
 	function ListToStringArray([STRING]$List, $DefaultValue = "Any")
@@ -53,18 +95,20 @@ function Import-FirewallRules
 			return $DefaultValue
 		}
 	}
-
-
-	if (!$JSON)
-	{ # read CSV file
-		if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.csv" }
-		$FirewallRules = Get-Content $CSVFile | ConvertFrom-CSV -Delimiter ";"
-	}
-	else
-	{ # read JSON file
-		if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.json" }
-		$FirewallRules = Get-Content $CSVFile | ConvertFrom-JSON
-	}
+    Write-Output "Loading Firewall rules to memory"
+    SWITCH($FileType)
+        {
+        "CSV" # read CSV file
+            {
+		    #if ([STRING]::IsNullOrEmpty($path)) { $CSVFile = ".\FirewallRules.csv" }
+		    $FirewallRules = Get-Content $path | ConvertFrom-CSV -Delimiter ";"
+            }
+        "JSON" # Read JSON file
+            {
+            #if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.json" }
+	    	$FirewallRules = Get-Content $path | ConvertFrom-JSON
+            }
+        }
 
 	# iterate rules
 	ForEach ($Rule In $FirewallRules)
@@ -107,9 +151,20 @@ function Import-FirewallRules
 
 		Write-Output "Generating firewall rule `"$($Rule.DisplayName)`" ($($Rule.Name))"
 		# remove rule if present
-		Get-NetFirewallRule -EA SilentlyContinue -PolicyStore $PolicyStore -Name $Rule.Name | Remove-NetFirewallRule
+        try
+            {
+            Write-Output "Processing firewall rule `"$($Rule.DisplayName)`" ($($Rule.Name))"
+            Get-NetFirewallRule -EA Stop -PolicyStore $PolicyStore -Name $Rule.Name | Remove-NetFirewallRule
+            Write-Output "Removed existing `"$($Rule.DisplayName)`" ($($Rule.Name))"
+            }
+        catch
+            {          
+            }
+        # generate new firewall rule, parameter are assigned with splatting
+        Write-Output "Adding `"$($Rule.DisplayName)`" ($($Rule.Name))"
+		New-NetFirewallRule -EA Continue -PolicyStore $PolicyStore @RuleSplatHash |Out-Null
 
-		# generate new firewall rule, parameter are assigned with splatting
-		New-NetFirewallRule -EA Continue -PolicyStore $PolicyStore @RuleSplatHash
+		
 	}
+
 }

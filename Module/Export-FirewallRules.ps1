@@ -31,20 +31,49 @@ Export blocking rules
 .NOTES
 Author: Markus Scholtes
 Version: 1.1.0
-Build date: 2020/12/12
+
+.CHANGE LOGE
+    Build date: 2020/12/12
+    Update 2021/11/19 ThisIsJeremiah@protonmail.com
+        -Rename path parameter for CSVFile to Path.
+        -Specified mandatory parameters 
+        -Improved json format 
+
 .EXAMPLE
-Export-FirewallRules
-Exports all firewall rules to the CSV file FirewallRules.csv in the current directory.
+    Export-FirewallRules -Path "D:\FireWallRules.json" -OutForman JSON
+    Exports all firewall rules to the specified json file
+
 .EXAMPLE
-Export-FirewallRules -Inbound -Allow
-Exports all inbound and allowing firewall rules to the CSV file FirewallRules.csv in the current directory.
-.EXAMPLE
-Export-FirewallRules snmp* SNMPRules.json -json
-Exports all SNMP firewall rules to the JSON file SNMPRules.json.
+    Export-FirewallRules -Path "D:\FireWallRules.json" -OutForman JSON -Inbound -Allow
+    Exports all inbound and allowing firewall rules to the json file FirewallRules.json.
+
 #>
 function Export-FirewallRules
 {
-	Param($Name = "*", $CSVFile = "", [SWITCH]$JSON, [STRING]$PolicyStore = "ActiveStore", [SWITCH]$Inbound, [SWITCH]$Outbound, [SWITCH]$Enabled, [SWITCH]$Disabled, [SWITCH]$Block, [SWITCH]$Allow)
+	Param(
+    [Parameter(Mandatory = $false)]
+    [string]$Name = "*", # specify specific rule
+    [Parameter(Mandatory = $true)]
+    [string]$Path,       # Path for file
+    #[string]$CSVFile = "",
+    [Parameter(Mandatory = $false)]
+    [Validateset("JSON","CSV")]
+    [String]$OutFormat="JSON",       # Swich to denote Json output. Default is json
+    [Parameter(Mandatory = $false)]
+    [STRING]$PolicyStore = "ActiveStore",
+    [Parameter(Mandatory = $false)]
+    [SWITCH]$Inbound,
+    [Parameter(Mandatory = $false)]
+    [SWITCH]$Outbound,
+    [Parameter(Mandatory = $false)]
+    [SWITCH]$Enabled,
+    [Parameter(Mandatory = $false)]
+    [SWITCH]$Disabled,
+    [Parameter(Mandatory = $false)]
+    [SWITCH]$Block,
+    [Parameter(Mandatory = $false)]
+    [SWITCH]$Allow
+    )
 
 	#Requires -Version 4.0
 
@@ -147,14 +176,19 @@ function Export-FirewallRules
 		$FirewallRuleSet += $HashProps
 	}
 
-	if (!$JSON)
-	{ # output rules in CSV format
-		if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.csv" }
-		$FirewallRuleSet | ConvertTo-CSV -NoTypeInformation -Delimiter ";" | Set-Content $CSVFile
-	}
-	else
-	{ # output rules in JSON format
-		if ([STRING]::IsNullOrEmpty($CSVFile)) { $CSVFile = ".\FirewallRules.json" }
-		$FirewallRuleSet | ConvertTo-JSON | Set-Content $CSVFile
-	}
+    SWITCH($OutFormat)
+        {
+        "CSV" # output rules in CSV format
+            {
+		    if ([STRING]::IsNullOrEmpty($Path)) { $CSVFile = ".\FirewallRules.csv" }
+		    $FirewallRuleSet | ConvertTo-CSV -NoTypeInformation -Delimiter ";" | Set-Content $Path
+            }
+        "JSON" # output rules in json format. THis is default behavior
+            {
+            if ([STRING]::IsNullOrEmpty($Path)) { $CSVFile = ".\FirewallRules.json" }
+             #Converting to CSV then from csv is backward compatable equivalent to -EnumAsString (Powershell V6+)
+		    $FirewallRuleSet | ConvertTo-Csv | ConvertFrom-csv | ConvertTo-JSON  | Set-Content $Path
+            }
+        }
+
 }
