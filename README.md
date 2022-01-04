@@ -76,7 +76,7 @@ There might be issues when importing rules for "metro apps" to another computer.
 
 App packet rules are stored as a SID and usually apply only to user accounts whose SIDs are stored in the export file. Those rules will normally not work on another computer since a SID is unique.
 ## Versions
-### 1.1.1 / 2022-01-04
+### 1.1.1, 2022-01-04
 - export enum values as string instead of int to JSON files
 
 ### 1.1.0, 2020-12-12
