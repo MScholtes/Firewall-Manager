@@ -7,7 +7,7 @@ The three commandlets ExportFirewallRules, ImportFirewallRules and RemoveFirewal
 
 Requires Windows 8.1 / Server 2012 R2 or above.
 
-By Markus Scholtes, 2020
+By Markus Scholtes, 2022
 
 ## Installation
 
@@ -16,7 +16,7 @@ PS C:\> Install-Module Firewall-Manager
 ```
 (on Powershell V4 you may have to install PowershellGet before) or download from here: https://www.powershellgallery.com/packages/Firewall-Manager/.
 
-See the script version web page too: [Powershell scripts to export and import firewall rules](https://github.com/MScholtes/TechNet-Gallery).
+See the script version web page too: [Powershell scripts to export and import firewall rules](https://gallery.technet.microsoft.com/Powershell-to-export-and-23287694).
 
 ## Functions
 ### Export-FirewallRules
@@ -76,6 +76,9 @@ There might be issues when importing rules for "metro apps" to another computer.
 
 App packet rules are stored as a SID and usually apply only to user accounts whose SIDs are stored in the export file. Those rules will normally not work on another computer since a SID is unique.
 ## Versions
+### 1.1.1 / 2022-01-04
+- export enum values as string instead of int to JSON files
+
 ### 1.1.0, 2020-12-12
 - new parameter -Policystore
 
